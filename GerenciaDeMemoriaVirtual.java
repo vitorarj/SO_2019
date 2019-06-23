@@ -7,73 +7,44 @@ import java.util.Scanner;
  *
  * @author vitor
  */
-public class GerenciaDeMemoriaVirtual {
+ public class GerenciaDeMemoriaVirtual {
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-        
-        
-        // TODO code application logic here
-        
-  Scanner scanner = new Scanner(System.in);
-  String referencia = scanner.nextLine();
-  String[] stringReferencia = referencia.split(",");
-
-  // FIFO
-  AlgoritmoDeSubstituicao fifo = new AlgoritmoFifo(5);
-
-  for (int i = 0; i < (stringReferencia.length - 1); i++) {
-   fifo.inserir(stringReferencia[i]);
-
-  }
-  System.out.println("Falhas FIFO: " + fifo.getPageFaultCount());
-
-
-  // SEGUNDA CHANCE
-  AlgoritmoDeSubstituicao sc = new AlgoritmoSegundaChance(5);
-
-  for (int i = 0; i < (stringReferencia.length - 1); i++) {
-   sc.inserir(stringReferencia[i]);
-   sc.imprimirQuadros();
-
-  }
-  System.out.println("Falhas SEGUNDA CHANCE: " + sc.getPageFaultCount());
-
- }
-}
-
-abstract class AlgoritmoDeSubstituicao {
- protected int numeroDeFalhas;
- protected int numeroDeQuadros;
+ public static void main(String[] args) {
+               
+ abstract class Substituicao {
+ protected int numFalhas;
+ protected int numQuadros;
  LinkedList quadros;
 
- public AlgoritmoDeSubstituicao(int numeroDeQuadros) {
-  if (numeroDeQuadros < 0)
+ public Substituicao(int numQuadros) {
+  if (numQuadros < 0)
    throw new IllegalArgumentException();
-  this.numeroDeQuadros = numeroDeQuadros;
-  numeroDeFalhas = 0;
+  this.numQuadros = numQuadros;
+  numFalhas = 0;
  }
 
  public int getPageFaultCount() {
-  return numeroDeFalhas;
+  return numFalhas;
  }
 
- public abstract void inserir(String pageNumber);
+ public abstract void insert(String pageNumber);
 
  public void imprimirQuadros() {
-  System.out.print("Quadros:  ");
+  System.out.print("Quadros:  |");
   for (int i = 0; i < quadros.size(); i++) {
-   System.out.print(quadros.get(i) + " ");
+   System.out.print(quadros.get(i) + " |");
   }
   System.out.println();
  }
+
 }
 
-class AlgoritmoSegundaChance extends AlgoritmoDeSubstituicao {
+class AlgoritmoSegundaChance extends Substituicao {
  LinkedList bits;
- private static int PONTEIRO = 0;
+ private int point = 0;
 
  public AlgoritmoSegundaChance(int numeroDeQuadros) {
   super(numeroDeQuadros);
@@ -83,36 +54,36 @@ class AlgoritmoSegundaChance extends AlgoritmoDeSubstituicao {
  }
 
  @Override
- public void inserir(String pageNumber) {
+ public void insert(String pageNumber) {
   int tmp = quadros.indexOf(pageNumber);
 
   // caso a pagina ainda nao esteja na memoria
   if (tmp == -1) {
-   if (quadros.size() < numeroDeQuadros) {
+   if (quadros.size() < numQuadros) {
     quadros.add(pageNumber);
     bits.add(0);
    } else {
-     while((int)bits.get(PONTEIRO) == 1){
-     bits.set(PONTEIRO, 0);
-     PONTEIRO++;
+     while((int)bits.get(point) == 1){
+     bits.set(point, 0);
+     point++;
      // ponteiro voltando ao inicio
-     if (PONTEIRO == numeroDeQuadros) {
-      PONTEIRO = 0;
+     if (point == numQuadros) {
+      point = 0;
      }
     } 
     // substituicao
-    quadros.remove(PONTEIRO);
-    bits.remove(PONTEIRO);
-    quadros.add(PONTEIRO, pageNumber);
-    bits.add(PONTEIRO, 0);
+    quadros.remove(point);
+    bits.remove(point);
+    quadros.add(point, pageNumber);
+    bits.add(point, 0);
 
-    PONTEIRO++;
+    point++;
     // ponteiro voltando ao inicio
-    if (PONTEIRO == numeroDeQuadros) {
-     PONTEIRO = 0;
+    if (point == numQuadros) {
+     point = 0;
     }
    }
-   numeroDeFalhas++;
+   numFalhas++;
   } else { // se a pagina ja esta na memoria
    bits.set(tmp, 1);
 
@@ -121,16 +92,16 @@ class AlgoritmoSegundaChance extends AlgoritmoDeSubstituicao {
 
  @Override
  public void imprimirQuadros() {
-  System.out.print("Quadros:  ");
+  System.out.print("Quadros:  |");
   for (int i = 0; i < quadros.size(); i++) {
-   System.out.print(quadros.get(i) + " bit: " + bits.get(i) + " ");
+   System.out.print(quadros.get(i) + "| bit: " + bits.get(i) + " |");
   }
   System.out.println();
  }
-}
+ }
 
-class AlgoritmoFifo extends AlgoritmoDeSubstituicao {
- private static int INSERCAO = 0;
+ class AlgoritmoFifo extends Substituicao {
+ private int INSERT = 0;
 
  public AlgoritmoFifo(int numeroDeQuadros) {
 
@@ -139,28 +110,60 @@ class AlgoritmoFifo extends AlgoritmoDeSubstituicao {
  }
 
  @Override
- public void inserir(String pageNumber) {
+ public void insert(String pageNumber) {
   // antes de inserir, checar se a pagina ja esta na lista
   if (!quadros.contains(pageNumber)) {
 
    // se a quantidade de paginas na memoria for menor que o numero de
    // quadros
    // ou seja, ainda ha espaco
-   if (quadros.size() < numeroDeQuadros) {
+   if (quadros.size() < numQuadros) {
     quadros.add(pageNumber);
    } else {
-    quadros.remove(INSERCAO);
-    quadros.add(INSERCAO, pageNumber);
-    INSERCAO++;
-    if (INSERCAO == numeroDeQuadros) {
-     INSERCAO = 0;
+    quadros.remove(INSERT);
+    quadros.add(INSERT, pageNumber);
+    INSERT++;
+    if (INSERT == numQuadros) {
+     INSERT = 0;
     }
    }
-   numeroDeFalhas++;
+   numFalhas++;
 
   }
  }
-}
+ }
+        
+        int vQuadro = 3;
+        // TODO code application logic here
+        
+        Scanner scanner = new Scanner(System.in);
+        String referencia = scanner.nextLine();
+        String[] stringReferencia = referencia.split(",");
+
+         // Algoritmo de substituição FIFO
+        Substituicao fifo = new AlgoritmoFifo(vQuadro);
+
+        for (int i = 0; i < (stringReferencia.length - 1); i++) {
+        fifo.insert(stringReferencia[i]);
+
+        }
+        System.out.println("Falhas FIFO: " + fifo.getPageFaultCount());
+
+
+        // Algoritmo de substituição SEGUNDA CHANCE
+        Substituicao twice = new AlgoritmoSegundaChance(vQuadro);
+
+        for (int i = 0; i < (stringReferencia.length - 1); i++) {
+        twice.insert(stringReferencia[i]);
+        twice.imprimirQuadros();
+
+        }
+        System.out.println("Falhas SEGUNDA CHANCE: " + twice.getPageFaultCount());
+
+        }
+        }
+
+
 
     
     
